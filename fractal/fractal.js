@@ -28,6 +28,8 @@ let typeStrings = ["Мандельброт", "Жюлиа"];
 typeParams = [[0, 0], [-0.71, 0.3]];
 let type = 1;
 
+let intervalId = null;
+
 function initGL(canvas) {
     try {
         gl = canvas.getContext("experimental-webgl");
@@ -193,6 +195,13 @@ function webGLStart(bodyMargin) {
     switchType();
 }
 
+function update() {
+    let t = Date.now() * 0.001;
+    document.getElementById("paramA").value = Math.sin(t * 0.5) * 0.5;
+    document.getElementById("paramB").value = Math.cos(t * 0.3) * 0.5;
+    onSettingsChange();
+}
+
 function onSettingsChange() {
     let iter = document.getElementById("iter").value;
     let thold = document.getElementById("thold").value;
@@ -216,4 +225,17 @@ function switchType() {
     document.getElementById("paramA").value = typeParams[type][0];
     document.getElementById("paramB").value = typeParams[type][1];
     onSettingsChange();
+}
+
+function switchAuto() {
+    let value;
+    if (intervalId === null) {
+        value = "Стоп";
+        intervalId = setInterval(update, 50);
+    } else {
+        value = "Авто";
+        clearInterval(intervalId);
+        intervalId = null;
+    }
+    document.getElementById("bAuto").value = value;
 }
