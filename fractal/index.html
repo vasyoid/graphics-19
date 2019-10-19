@@ -1,0 +1,148 @@
+<html lang="ru">
+  <head>
+    <title>Fractal</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <script id="shader-fs" type="x-shader/x-fragment">
+      precision mediump float;
+
+
+      const int MAX_ITERATIONS = 100;
+
+      uniform int type;
+      uniform int iter;
+      uniform float thold;
+      uniform float a;
+      uniform float b;
+
+      varying vec2 vPosition;
+
+      vec2 f(vec2 z, vec2 c) {
+        return vec2(z.x * z.x - z.y * z.y + c.x, 2.0 * z.x * z.y + c.y);
+      }
+
+      void main(void) {
+        vec2 z;
+        vec2 c;
+        if (type == 0) {
+          z = vec2(a, b);
+          c = vPosition;
+        } else {
+          z = vPosition;
+          c = vec2(a, b);
+        }
+        for (int i = 0; i < MAX_ITERATIONS; ++i) {
+          if (i >= iter) break;
+          z = f(z, c);
+          if (z.x * z.x + z.y * z.y > thold) {
+            float color = float(i) / float(iter);
+            gl_FragColor = vec4(color, color, color, 1);
+            return;
+          }
+        }
+        gl_FragColor = vec4(1, 1, 1, 1);
+      }
+    </script>
+    <script id="shader-vs" type="x-shader/x-vertex">
+      attribute vec2 aVertexPosition;
+      attribute vec2 aPlotPosition;
+
+      varying vec2 vPosition;
+
+      void main(void) {
+        gl_Position = vec4(aVertexPosition, 1.0, 1.0);
+        vPosition = aPlotPosition;
+      }
+    </script>
+    <script type="text/javascript" src="fractal.js"></script>
+    <style type="text/css">
+      table {
+        border: none;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        border-collapse: collapse;
+        border-spacing: 0;
+        display: block;
+      }
+    </style>
+  </head>
+  <body onload="webGLStart(5);" style="margin: 5px">
+    <table>
+      <tr>
+        <td rowspan="5">
+          <canvas id="fractal-canvas" style="border: none;"></canvas>
+        </td>
+        <td align="center" width="100%">
+          Тип фрактала:
+          <br/>
+          <label>
+            <input type="button" id="bType" onclick="switchType();">
+          </label>
+          <br/>
+          <p id="desc0">
+            z<sub>0</sub> = a + ib
+            <br/>
+            f(z) = z<sup>2</sup> + c
+            <br/>
+            a, b -- параметры
+            <br/>
+            c -- координата точки
+          </p>
+          <p id="desc1">
+            z<sub>0</sub> -- координата точки
+            <br/>
+            f(z) = z<sup>2</sup> + c
+            <br/>
+            c = a + ib
+            <br/>
+            a, b -- параметры
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" width="100%">
+          <label>
+            1
+            <input id="iter" type="range" min="1" max="100" step="1" value="100" oninput="onSettingsChange();"/>
+            100
+            <br/>
+            количество итераций
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" width="100%">
+          <label>
+            0.1
+            <input id="thold" type="range" min="0.1" max="10" step="0.1" value="4" oninput="onSettingsChange();"/>
+            10
+            <br/>
+            порог сходимости
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" width="100%">
+          <label>
+            -1
+            <input id="paramA" type="range" min="-1" max="1" step="0.002" value="0" oninput="onSettingsChange();"/>
+            1
+            <br/>
+            a
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" width="100%">
+          <label>
+            -1
+            <input id="paramB" type="range" min="-1" max="1" step="0.002" value="0" oninput="onSettingsChange();"/>
+            1
+            <br/>
+            b
+          </label>
+      </tr>
+    </table>
+  </body>
+</html>
