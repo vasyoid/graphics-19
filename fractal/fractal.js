@@ -141,11 +141,16 @@ function resizeCanvas(canvas) {
 }
 
 function onZoom(event) {
-    let delta = event.deltaY * 0.01;
+    let delta;
+    if (event.deltaY < 0){
+        delta = 1 - event.deltaY * 0.01;
+    } else {
+        delta = 1 / (1 + event.deltaY * 0.01);
+    }
     let pos = globalToLocal(event.clientX, event.clientY);
-    centerOffsetX -= delta * pos[0] / zoom / (1 - delta);
-    centerOffsetY += delta * pos[1] / zoom / (1 - delta);
-    zoom *= 1 - delta;
+    centerOffsetX += (delta - 1) * pos[0] / zoom / delta;
+    centerOffsetY -= (delta - 1) * pos[1] / zoom / delta;
+    zoom *= delta;
     drawScene();
 }
 
