@@ -5,8 +5,9 @@
     <script id="shader-fs" type="x-shader/x-fragment">
       precision mediump float;
 
-
       const int MAX_ITERATIONS = 100;
+
+      uniform sampler2D uSampler;
 
       uniform int type;
       uniform int iter;
@@ -35,11 +36,11 @@
           z = f(z, c);
           if (z.x * z.x + z.y * z.y > thold) {
             float color = float(i) / float(iter);
-            gl_FragColor = vec4(color, color, color, 1);
+            gl_FragColor = texture2D(uSampler, vec2(color, 0));
             return;
           }
         }
-        gl_FragColor = vec4(1, 1, 1, 1);
+        gl_FragColor = texture2D(uSampler, vec2(1, 0));
       }
     </script>
     <script id="shader-vs" type="x-shader/x-vertex">
@@ -104,8 +105,8 @@
         <td align="center" width="100%">
           <label>
             1
-            <input id="iter" type="range" min="1" max="100" step="1" value="100" oninput="onSettingsChange();"/>
-            100
+            <input id="iter" type="range" min="1" max="200" step="1" value="100" oninput="onSettingsChange();"/>
+            200
             <br/>
             количество итераций
           </label>

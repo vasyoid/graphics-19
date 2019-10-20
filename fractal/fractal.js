@@ -8,6 +8,7 @@ let iterLoc;
 let tholdLoc;
 let aLoc;
 let bLoc;
+let samplerLoc;
 
 let centerOffsetX = 0;
 let centerOffsetY = 0;
@@ -29,6 +30,8 @@ typeParams = [[0, 0], [-0.71, 0.3]];
 let type = 1;
 
 let intervalId = null;
+
+let texture;
 
 function initGL(canvas) {
     try {
@@ -86,6 +89,7 @@ function initShaders() {
     tholdLoc = gl.getUniformLocation(shaderProgram, "thold");
     aLoc = gl.getUniformLocation(shaderProgram, "a");
     bLoc = gl.getUniformLocation(shaderProgram, "b");
+    samplerLoc = gl.getUniformLocation(shaderProgram, "uSampler");
 
     gl.useProgram(shaderProgram);
 
@@ -113,6 +117,10 @@ function initBuffers() {
 function drawScene() {
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(samplerLoc, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
     gl.vertexAttribPointer(aVertexPosition, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -178,6 +186,26 @@ function globalToLocal(x, y) {
     ];
 }
 
+function generateGradient() {
+    let gradient = new Uint8Array(3 * 255);
+    for (let i = 0; 3 * i < gradient.length; ++i) {
+        gradient[3 * i] = Math.max(255 - 2 * i, 0);
+        gradient[3 * i + 1] = 2 * Math.abs(i - 127);
+        gradient[3 * i + 2] = Math.max(255 - 2 * i, 0);
+    }
+    return gradient;
+}
+
+function initTexture() {
+    let gradient = new Uint8Array(generateGradient());
+    texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 255, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, gradient);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+}
+
 function webGLStart(bodyMargin) {
     canvasOffset = bodyMargin;
     let canvas = document.getElementById("fractal-canvas");
@@ -190,6 +218,7 @@ function webGLStart(bodyMargin) {
     initGL(canvas);
     initShaders();
     initBuffers();
+    initTexture();
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     switchType();
