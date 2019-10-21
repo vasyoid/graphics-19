@@ -14,6 +14,7 @@
       uniform float thold;
       uniform float a;
       uniform float b;
+      uniform float nColors;
 
       varying vec2 vPosition;
 
@@ -36,7 +37,8 @@
           z = f(z, c);
           if (z.x * z.x + z.y * z.y > thold) {
             float color = float(i) / float(iter);
-            gl_FragColor = texture2D(uSampler, vec2(color, 0));
+            float shift = 0.5 / nColors;
+            gl_FragColor = texture2D(uSampler, vec2(color * (1.0 - 2.0 * shift) + shift, 0));
             return;
           }
         }

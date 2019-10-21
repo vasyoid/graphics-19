@@ -9,6 +9,7 @@ let tholdLoc;
 let aLoc;
 let bLoc;
 let samplerLoc;
+let nColorsLoc;
 
 let centerOffsetX = 0;
 let centerOffsetY = 0;
@@ -90,6 +91,7 @@ function initShaders() {
     aLoc = gl.getUniformLocation(shaderProgram, "a");
     bLoc = gl.getUniformLocation(shaderProgram, "b");
     samplerLoc = gl.getUniformLocation(shaderProgram, "uSampler");
+    nColorsLoc = gl.getUniformLocation(shaderProgram, "nColors");
 
     gl.useProgram(shaderProgram);
 
@@ -186,21 +188,12 @@ function globalToLocal(x, y) {
     ];
 }
 
-function generateGradient() {
-    let gradient = new Uint8Array(3 * 255);
-    for (let i = 0; 3 * i < gradient.length; ++i) {
-        gradient[3 * i] = Math.max(255 - 2 * i, 0);
-        gradient[3 * i + 1] = 2 * Math.abs(i - 127);
-        gradient[3 * i + 2] = Math.max(255 - 2 * i, 0);
-    }
-    return gradient;
-}
-
 function initTexture() {
-    let gradient = new Uint8Array(generateGradient());
+    let gradient = new Uint8Array([255, 255, 255, 0, 0, 0, 0, 255, 0]);
+    gl.uniform1f(nColorsLoc, gradient.length / 3);    
     texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 255, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, gradient);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gradient.length / 3, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, gradient);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
