@@ -91,7 +91,7 @@ def redraw(vertices, normals, indices, n_indices):
 def main():
     init()
 
-    vertices, normals, indices, n_indices = read_model("tree.obj")
+    vertices, normals, indices, n_indices = read_model("models/tree.obj")
 
     redraw(vertices, normals, indices, n_indices)
 
