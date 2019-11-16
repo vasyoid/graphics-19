@@ -1,3 +1,5 @@
+import itertools
+
 import pygame
 from pygame.locals import *
 
@@ -15,7 +17,6 @@ Z_FAR = 50
 SCENE_CENTER = (0, 0, 0)
 UP_DIRECTION = (0, 1, 0)
 RIGHT_DIRECTION_EXT = (1, 0, -1, 1)
-UP_DIRECTION_EXT = (0, 1, 0, 1)
 CAMERA_POSITION = (2, 2, 2)
 
 ZOOM_FACTOR = 1.1
@@ -60,11 +61,12 @@ def read_model(filename):
     vertices = attrib.vertices
     normals = attrib.normals
 
-    indices = reader.GetShapes()[0].mesh.indices
+    # indices = reader.GetShapes()[0].mesh.indices
+    indices = list(itertools.chain.from_iterable([shape.mesh.indices for shape in reader.GetShapes()]))
     vertex_indices = [ind.vertex_index for ind in indices]
     normal_indices = [ind.normal_index for ind in indices]
 
-    if not attrib.normals:
+    if attrib.normals:
         normals = []
         normal_indices = []
         for i, inds in enumerate(group(vertex_indices, 3)):
@@ -91,7 +93,7 @@ def redraw(vertices, normals, indices, n_indices):
 def main():
     init()
 
-    vertices, normals, indices, n_indices = read_model("models/tree.obj")
+    vertices, normals, indices, n_indices = read_model("models/tape.obj")
 
     redraw(vertices, normals, indices, n_indices)
 
@@ -109,9 +111,8 @@ def main():
                 need_redraw = True
             elif event.type == pygame.MOUSEMOTION and event.buttons[0]:
                 glMatrixMode(GL_MODELVIEW)
+                glRotate(ROTATION_FACTOR * event.rel[0], *UP_DIRECTION)
                 model_view_matrix = glGetDoublev(GL_MODELVIEW_MATRIX)
-                up = np.dot(model_view_matrix, UP_DIRECTION_EXT)[:-1]
-                glRotate(ROTATION_FACTOR * event.rel[0], *up)
                 right = np.dot(model_view_matrix, RIGHT_DIRECTION_EXT)[:-1]
                 glRotate(ROTATION_FACTOR * event.rel[1], *right)
                 need_redraw = True
