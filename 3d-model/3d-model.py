@@ -61,12 +61,13 @@ def read_model(filename):
     vertices = attrib.vertices
     normals = attrib.normals
 
-    # indices = reader.GetShapes()[0].mesh.indices
-    indices = list(itertools.chain.from_iterable([shape.mesh.indices for shape in reader.GetShapes()]))
+    indices = list(itertools.chain.from_iterable(
+        [shape.mesh.indices for shape in reader.GetShapes()]
+    ))
     vertex_indices = [ind.vertex_index for ind in indices]
     normal_indices = [ind.normal_index for ind in indices]
 
-    if attrib.normals:
+    if not attrib.normals:
         normals = []
         normal_indices = []
         for i, inds in enumerate(group(vertex_indices, 3)):
