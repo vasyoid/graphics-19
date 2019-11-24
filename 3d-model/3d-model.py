@@ -1,4 +1,6 @@
 import itertools
+import time
+from math import sin, cos
 
 import pygame
 from pygame.locals import *
@@ -91,15 +93,25 @@ def redraw(vertices, normals, indices, n_indices):
     pygame.display.flip()
 
 
+def update_lights(lights_loc):
+    t = time.time()
+    lights = [(sin(t * 2), cos(t * 2), 0, 1), (cos(t), 0, sin(t), 1), (0, sin(t * 3), cos(t * 3), 1)]
+    glUniform4fv(lights_loc, 3, lights)
+
+
 def main():
     init()
+    program = create_program()
+    lights_loc = glGetUniformLocation(program, "lights")
+    animate_lights = True
 
-    vertices, normals, indices, n_indices = read_model("models/tape.obj")
+    vertices, normals, indices, n_indices = read_model("models/bunny.obj")
 
+    update_lights(lights_loc)
     redraw(vertices, normals, indices, n_indices)
 
     while True:
-        need_redraw = False
+        need_redraw = animate_lights
         for event in pygame.event.get():
             if is_event_quit(event):
                 pygame.quit()
@@ -117,6 +129,11 @@ def main():
                 right = np.dot(model_view_matrix, RIGHT_DIRECTION_EXT)[:-1]
                 glRotate(ROTATION_FACTOR * event.rel[1], *right)
                 need_redraw = True
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                animate_lights ^= 1
+
+        if animate_lights:
+            update_lights(lights_loc)
 
         if need_redraw:
             redraw(vertices, normals, indices, n_indices)
@@ -133,10 +150,31 @@ def init():
     gluLookAt(*CAMERA_POSITION, *SCENE_CENTER, *UP_DIRECTION)
 
     glClearColor(*COLOR_BLACK)
-    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE)
-    glEnable(GL_LIGHTING)
-    glEnable(GL_LIGHT0)
     glEnable(GL_DEPTH_TEST)
+
+
+def create_shader(shader_type, filename):
+    with open(filename) as file:
+        source = "".join(file.readlines())
+        shader = glCreateShader(shader_type)
+        glShaderSource(shader, source)
+        glCompileShader(shader)
+        if not glGetShaderiv(shader, GL_COMPILE_STATUS):
+            info = glGetShaderInfoLog(shader)
+            print("Shader compile error:", info)
+            exit(1)
+        return shader
+
+
+def create_program():
+    vertex = create_shader(GL_VERTEX_SHADER, "3d-model.vert")
+    fragment = create_shader(GL_FRAGMENT_SHADER, "3d-model.frag")
+    program = glCreateProgram()
+    glAttachShader(program, vertex)
+    glAttachShader(program, fragment)
+    glLinkProgram(program)
+    glUseProgram(program)
+    return program
 
 
 if __name__ == "__main__":
