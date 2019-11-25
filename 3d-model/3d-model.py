@@ -1,12 +1,12 @@
-import itertools
 import time
 from math import sin, cos
+
+import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-import tinyobjloader
-import numpy as np
+import objloader
 
 ESC_KEY = b'\x1b'
 
@@ -37,26 +37,12 @@ def normalize(v):
 
 
 def read_model(filename):
-    reader = tinyobjloader.ObjReader()
+    mesh = objloader.load(filename)
 
-    # noinspection PyArgumentList
-    if not reader.ParseFromFile(filename):
-        print(f"Failed to load {filename}. Error: {reader.Error()}")
+    vertices = [[mesh.vertices[ind][j] for j in range(3)] for ind in mesh.vertex_indices]
 
-    attrib = reader.GetAttrib()
-    vertices = attrib.vertices
-    normals = attrib.normals
-
-    indices = list(itertools.chain.from_iterable(
-        [shape.mesh.indices for shape in reader.GetShapes()]
-    ))
-    vertex_indices = [ind.vertex_index for ind in indices]
-    normal_indices = [ind.normal_index for ind in indices]
-
-    vertices = [[vertices[3 * ind + j] for j in range(3)] for ind in vertex_indices]
-
-    if normals:
-        normals = [[normals[3 * ind + j] for j in range(3)] for ind in normal_indices]
+    if mesh.normals:
+        normals = [[mesh.normals[ind][j] for j in range(3)] for ind in mesh.normal_indices]
     else:
         normals = []
         for i in range(0, len(vertices), 3):
@@ -108,9 +94,7 @@ def init(vertices, normals):
     glutInit(sys.argv)
     glutCreateWindow("3d-model")
 
-    glMatrixMode(GL_PROJECTION)
-    gluPerspective(FIELD_OF_VIEW, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR)
-    gluLookAt(*CAMERA_POSITION, *SCENE_CENTER, *UP_DIRECTION)
+    on_reshape(WINDOW_WIDTH, WINDOW_HEIGHT)
     glClearColor(*COLOR_BLACK)
 
     glEnable(GL_DEPTH_TEST)
@@ -121,9 +105,22 @@ def init(vertices, normals):
     glColor3f(1, 1, 1)
 
     program = create_program()
-    lights_loc = glGetUniformLocation(program, "lights")
-    lights = [[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
-    glUniform4fv(lights_loc, 3, lights)
+
+    glutDisplayFunc(on_draw_wrapper(len(vertices)))
+    glutMouseFunc(on_mouse)
+    glutMotionFunc(on_mouse_move)
+    glutKeyboardFunc(on_key_press)
+    glutIdleFunc(on_animate_wrapper(glGetUniformLocation(program, "lights")))
+    glutReshapeFunc(on_reshape)
+
+
+def on_reshape(width, height):
+    print(width, height)
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glViewport(0, 0, width, height)
+    gluPerspective(FIELD_OF_VIEW, width / height, Z_NEAR, Z_FAR)
+    gluLookAt(*CAMERA_POSITION, *SCENE_CENTER, *UP_DIRECTION)
 
 
 def on_draw_wrapper(n_verts):
@@ -149,9 +146,11 @@ def on_mouse(button, state, x, y):
         else:
             prev_x = prev_y = -1
     elif button == SCROLL_UP and state == GLUT_DOWN:
+        glMatrixMode(GL_MODELVIEW)
         glScale(ZOOM_FACTOR, ZOOM_FACTOR, ZOOM_FACTOR)
         glutPostRedisplay()
     elif button == SCROLL_DOWN and state == GLUT_DOWN:
+        glMatrixMode(GL_MODELVIEW)
         glScale(1 / ZOOM_FACTOR, 1 / ZOOM_FACTOR, 1 / ZOOM_FACTOR)
         glutPostRedisplay()
 
@@ -175,14 +174,23 @@ def on_mouse_move(x, y):
         glutPostRedisplay()
 
 
+def animate_lights(lights_loc):
+    t = time.time()
+    lights = [(sin(t * 2), cos(t * 2), 0, 1), (cos(t), 0, sin(t), 1), (0, sin(t * 3), cos(t * 3), 1)]
+    glUniform4fv(lights_loc, 3, lights)
+
+
+def on_animate_wrapper(lights_loc):
+    def on_animate():
+        animate_lights(lights_loc)
+        glutPostRedisplay()
+    return on_animate
+
+
 def main():
     vertices, normals = read_model("models/bunny.obj")
     global prev_x, prev_y
     init(vertices, normals)
-    glutDisplayFunc(on_draw_wrapper(len(vertices)))
-    glutMouseFunc(on_mouse)
-    glutMotionFunc(on_mouse_move)
-    glutKeyboardFunc(on_key_press)
     glutMainLoop()
 
 
