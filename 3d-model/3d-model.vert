@@ -1,4 +1,4 @@
-#version 120
+#version 140
 
 uniform vec4 lights[3];
 
@@ -6,6 +6,9 @@ varying vec3 lightsTransformed[3];
 varying vec3 normal;
 varying vec3 cameraPos;
 varying vec4 vertexColor;
+
+in vec2 texCoord;
+out vec2 fragTexCoord;
 
 void main() {
     for (int i = 0; i < 3; ++i) {
@@ -15,4 +18,5 @@ void main() {
     normal = normalize(gl_NormalMatrix * gl_Normal);
     gl_Position = ftransform();
     vertexColor = gl_Color;
+    fragTexCoord = texCoord;
 }

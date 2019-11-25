@@ -41,6 +41,7 @@ def load(filename):
     try:
         with open(filename) as file:
             for line in file:
+                line = line.replace("\\", " ")
                 data = line.split()
                 if not data:
                     continue
