@@ -115,7 +115,6 @@ def init(vertices, normals):
 
 
 def on_reshape(width, height):
-    print(width, height)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glViewport(0, 0, width, height)
@@ -138,14 +137,13 @@ def on_key_press(key, x, y):
 
 
 def on_mouse(button, state, x, y):
-    if button == GLUT_LEFT_BUTTON:
-        global prev_x, prev_y
-        if state == GLUT_DOWN:
-            prev_x = x
-            prev_y = y
-        else:
-            prev_x = prev_y = -1
-    elif button == SCROLL_UP and state == GLUT_DOWN:
+    global prev_x, prev_y
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        prev_x = x
+        prev_y = y
+    else:
+        prev_x = prev_y = -1
+    if button == SCROLL_UP and state == GLUT_DOWN:
         glMatrixMode(GL_MODELVIEW)
         glScale(ZOOM_FACTOR, ZOOM_FACTOR, ZOOM_FACTOR)
         glutPostRedisplay()
@@ -188,7 +186,7 @@ def on_animate_wrapper(lights_loc):
 
 
 def main():
-    vertices, normals = read_model("models/bunny.obj")
+    vertices, normals = read_model("models/tree.obj")
     global prev_x, prev_y
     init(vertices, normals)
     glutMainLoop()
