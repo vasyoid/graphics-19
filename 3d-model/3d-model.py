@@ -29,6 +29,8 @@ SCROLL_DOWN = 4
 
 COLOR_BLACK = (0, 0, 0, 0)
 
+TEXTURE_SIZE = 256
+
 
 def normalize(v):
     norm = np.linalg.norm(v)
@@ -109,11 +111,15 @@ def init(vertices, texture_coords, normals):
     glVertexAttribPointer(1, 2, GL_FLOAT, False, 0, texture_coords)
     tex_id = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, tex_id)
-    # noise_texture = [(i + j) / 512 for i in range(255) for j in range(255)]
-    noise_texture = [noise.pnoise2(1 / 256 * i, 1 / 256 * j, octaves=10, repeatx=1, repeaty=1) for i in range(256) for j in range(256)]
-    factor = max(noise_texture)
-    noise_texture = [x / factor for x in noise_texture]
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 256, 256, 0, GL_RED, GL_FLOAT, noise_texture)
+    noise_texture = [
+        noise.pnoise2(1 / TEXTURE_SIZE * i, 1 / TEXTURE_SIZE * j, octaves=10, repeatx=1, repeaty=1)
+        for i in range(TEXTURE_SIZE) for j in range(TEXTURE_SIZE)
+    ]
+    base = min(noise_texture)
+    factor = max(noise_texture) - base
+    noise_texture = [(x - base) / factor for x in noise_texture]
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, TEXTURE_SIZE, TEXTURE_SIZE,
+                 0, GL_RED, GL_FLOAT, noise_texture)
     glGenerateMipmap(GL_TEXTURE_2D)
 
     glutDisplayFunc(on_draw_wrapper(len(vertices)))
@@ -139,6 +145,7 @@ def on_draw_wrapper(n_verts):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glDrawArrays(GL_TRIANGLES, 0, n_verts)
         glutSwapBuffers()
+
     return on_draw
 
 
@@ -165,7 +172,7 @@ def on_mouse(button, state, x, y):
         glutPostRedisplay()
 
 
-def rotate(dx, dy):
+def rotate_camera(dx, dy):
     glMatrixMode(GL_MODELVIEW)
     glRotate(ROTATION_FACTOR * dx, *UP_DIRECTION)
     model_view_matrix = glGetDoublev(GL_MODELVIEW_MATRIX)
@@ -178,7 +185,7 @@ def on_mouse_move(x, y):
     if prev_x >= 0 and prev_y >= 0:
         dx = x - prev_x
         dy = y - prev_y
-        rotate(dx, dy)
+        rotate_camera(dx, dy)
         prev_x = x
         prev_y = y
         glutPostRedisplay()
@@ -187,15 +194,17 @@ def on_mouse_move(x, y):
 def animate_lights(lights_loc):
     t = time.time()
     lights = [
-        (sin(t * 1) * 10,  cos(t * 1) * 10,  0,                1),
-        (cos(t * 2) * 10,  0,                sin(t * 2) * 10,  1),
-        (0,                sin(t * 3) * 10,  cos(t * 3) * 10,  1)
+        (sin(t * 1), cos(t * 1), 0, 1),
+        (cos(t * 2), 0, sin(t * 2), 1),
+        (0, sin(t * 3), cos(t * 3), 1)
     ]
-    glUniform4fv(lights_loc, 3, lights)
+    model_view_matrix = glGetDoublev(GL_MODELVIEW_MATRIX)
+    lights = [list(normalize(np.dot(model_view_matrix, l_dir)[:-1])) for l_dir in lights]
+    glUniform3fv(lights_loc, 3, lights)
 
 
 def animate_dissolve(threshold_loc):
-    threshold = (sin(time.time() / 5) + 1.1) / 2
+    threshold = abs(sin(time.time() / 4))
     glUniform1f(threshold_loc, threshold)
 
 
@@ -207,12 +216,14 @@ def on_animate_wrapper(lights_loc, threshold_loc):
     return on_animate
 
 
-def main():
-    vertices, normals, texture = read_model("models/tree.obj")
+def main(filename):
+    vertices, normals, texture = read_model(filename)
     global prev_x, prev_y
     init(vertices, texture, normals)
     glutMainLoop()
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 2:
+        print(f"usage: {sys.argv[0]} obj-file-name")
+    main(sys.argv[1])
