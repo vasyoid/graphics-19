@@ -19,7 +19,7 @@ Z_FAR = 50
 SCENE_CENTER = (0, 0, 0)
 UP_DIRECTION = (0, 1, 0)
 RIGHT_DIRECTION_EXT = (1, 0, -1, 1)
-CAMERA_POSITION = (2, 2, 2)
+CAMERA_POSITION = (10, 10, 10)
 
 ZOOM_FACTOR = 1.1
 ROTATION_FACTOR = 0.2
@@ -127,7 +127,7 @@ def init(vertices, texture_coords, normals):
     glutMotionFunc(on_mouse_move)
     glutKeyboardFunc(on_key_press)
     lights_loc = glGetUniformLocation(program, "lights")
-    threshold_loc = glGetUniformLocation(program, "threshold")
+    threshold_loc = glGetUniformLocation(program, "threshold") if texture_coords else -1
     glutIdleFunc(on_animate_wrapper(lights_loc, threshold_loc))
     glutReshapeFunc(on_reshape)
 

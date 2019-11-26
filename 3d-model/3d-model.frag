@@ -13,7 +13,7 @@ uniform vec4 lightColors[3] = vec4[3](
 );
 
 uniform sampler2D noiseTexture;
-uniform float threshold;
+uniform float threshold = 1;
 
 uniform float ia = 0.5;
 uniform float ka = 0.2;
