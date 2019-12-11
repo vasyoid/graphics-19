@@ -32,7 +32,7 @@ void key_press(unsigned char key, int x, int y) {
     }
 }
 
-float clamp(float &x, float min_x, float max_x) {
+void clamp(float &x, float min_x, float max_x) {
     x = std::max(min_x, std::min(x, max_x));
 }
 
