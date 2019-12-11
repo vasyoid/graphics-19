@@ -2,10 +2,9 @@
 
 uniform vec2 viewPortSize;
 
-out vec3 position;
+out vec2 fragCoord;
 
 void main() {
-    gl_Position = ftransform();
-    float ratio = viewPortSize.x / viewPortSize.y;
-    position = vec3(gl_Position.x * ratio, gl_Position.y, 1);
+    gl_Position = gl_Vertex;
+    fragCoord = vec2(gl_Position.x * viewPortSize.x / viewPortSize.y, gl_Position.y);
 }

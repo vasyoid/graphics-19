@@ -1,19 +1,73 @@
+#include <cmath>
+
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <fstream>
 #include <vector>
+#include <iostream>
 
 GLint viewPortSize_loc;
 GLint timer_loc;
+GLint eye_loc;
+
+void update_eye(float phi, float theta, float distance) {
+    glUniform3f(eye_loc, std::sin(phi) * distance, std::sin(theta) * distance, std::cos(phi) * distance);
+}
 
 void idle() {
     glUniform1f(timer_loc, glutGet(GLUT_ELAPSED_TIME) / 1000.0f);
-//    printf("uniform[%i] = %f\n", timer_loc, glutGet(GLUT_ELAPSED_TIME) / 100.0f);
 }
 
 void reshape(int width, int height) {
     glViewport(0, 0, width, height);
     glUniform2f(viewPortSize_loc, width, height);
+}
+
+void key_press(unsigned char key, int x, int y) {
+    switch (key) {
+        case 27:
+            exit(0);
+        default:
+            return;
+    }
+}
+
+float clamp(float &x, float min_x, float max_x) {
+    x = std::max(min_x, std::min(x, max_x));
+}
+
+void special_key_press(int key, int x, int y) {
+    static float distance = 4;
+    static float phi = 0;
+    static float theta = 1;
+
+    switch (key) {
+        case GLUT_KEY_LEFT:
+            phi -= 0.04;
+            break;
+        case GLUT_KEY_RIGHT:
+            phi += 0.04;
+            break;
+        case GLUT_KEY_DOWN:
+            theta -= 0.04;
+            break;
+        case GLUT_KEY_UP:
+            theta += 0.04;
+            break;
+        case GLUT_KEY_PAGE_DOWN:
+            distance += 0.04;
+            break;
+        case GLUT_KEY_PAGE_UP:
+            distance -= 0.04;
+            break;
+        default:
+            return;
+    }
+
+    clamp(theta, -1, 1);
+    clamp(distance, 2, 10);
+
+    update_eye(phi, theta, distance);
 }
 
 void display() {
@@ -70,7 +124,9 @@ void init(int argc, char **argv) {
     GLuint program = create_program();
 
     viewPortSize_loc = glGetUniformLocation(program, "viewPortSize");
-    timer_loc = glGetUniformLocation(program, "myTimer");
+    timer_loc = glGetUniformLocation(program, "time");
+    eye_loc = glGetUniformLocation(program, "eye");
+    update_eye(0, 1, 4);
 }
 
 int main(int argc, char **argv) {
@@ -78,5 +134,7 @@ int main(int argc, char **argv) {
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutIdleFunc(idle);
+    glutKeyboardFunc(key_press);
+    glutSpecialFunc(special_key_press);
     glutMainLoop();
 }
