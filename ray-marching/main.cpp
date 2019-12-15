@@ -12,11 +12,11 @@ GLint eye_loc;
 GLint eyeDir_loc;
 GLint maxSteps_loc;
 
-float phi = 0;
-float theta = -1;
-float eye_x = 0;
+float phi = 0.8f;
+float theta = -0.7f;
+float eye_x = 2;
 float eye_y = 3;
-float eye_z = 3;
+float eye_z = 4;
 int max_steps = 200;
 
 void draw_info();
@@ -142,6 +142,7 @@ void display() {
 void draw_info() {
     std::string info[] = {
         "Max steps: " + std::to_string(max_steps),
+        "Camera position: (" + std::to_string(eye_x) + ", " + std::to_string(eye_y) + ", " + std::to_string(eye_z) + ")",
         "Change max steps: scroll up/down",
         "Move left/right: W A S D",
         "Move up/down: Q E",
