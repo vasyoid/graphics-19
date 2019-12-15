@@ -7,6 +7,7 @@ const float FAR = 10000;
 
 uniform float time;
 uniform vec3 eye;
+uniform vec3 eyeDir;
 
 in vec2 fragCoord;
 
@@ -81,7 +82,6 @@ vec3 getNormal(vec3 p) {
 }
 
 void main() {
-    vec3 eyeDir = -normalize(eye);
     vec3 side = cross(eyeDir, vec3(0, 1, 0));
     vec3 up = cross(side, eyeDir);
     vec3 ray = normalize(eyeDir + side * fragCoord.x + up * fragCoord.y);

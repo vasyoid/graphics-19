@@ -9,9 +9,17 @@
 GLint viewPortSize_loc;
 GLint timer_loc;
 GLint eye_loc;
+GLint eyeDir_loc;
 
-void update_eye(float phi, float theta, float distance) {
-    glUniform3f(eye_loc, std::sin(phi) * distance, std::sin(theta) * distance, std::cos(phi) * distance);
+float phi = 0;
+float theta = -1;
+float eye_x = 0;
+float eye_y = 3;
+float eye_z = 3;
+
+void update_eye() {
+    glUniform3f(eyeDir_loc, -std::sin(phi) * std::cos(theta), std::sin(theta), -std::cos(phi) * std::cos(theta));
+    glUniform3f(eye_loc, eye_x, eye_y, eye_z);
 }
 
 void idle() {
@@ -27,9 +35,38 @@ void key_press(unsigned char key, int x, int y) {
     switch (key) {
         case 27:
             exit(0);
+        case 'A':
+        case 'a':
+            eye_x -= 0.1 * std::cos(phi);
+            eye_z += 0.1 * std::sin(phi);
+            break;
+        case 'D':
+        case 'd':
+            eye_x += 0.1 * std::cos(phi);
+            eye_z -= 0.1 * std::sin(phi);
+            break;
+        case 'S':
+        case 's':
+            eye_x += 0.1 * std::sin(phi);
+            eye_z += 0.1 * std::cos(phi);
+            break;
+        case 'W':
+        case 'w':
+            eye_x -= 0.1 * std::sin(phi);
+            eye_z -= 0.1 * std::cos(phi);
+            break;
+        case 'Q':
+        case 'q':
+            eye_y += 0.1;
+            break;
+        case 'E':
+        case 'e':
+            eye_y -= 0.1;
+            break;
         default:
             return;
     }
+    update_eye();
 }
 
 void clamp(float &x, float min_x, float max_x) {
@@ -37,37 +74,26 @@ void clamp(float &x, float min_x, float max_x) {
 }
 
 void special_key_press(int key, int x, int y) {
-    static float distance = 4;
-    static float phi = 0;
-    static float theta = 1;
-
     switch (key) {
         case GLUT_KEY_LEFT:
-            phi -= 0.04;
-            break;
-        case GLUT_KEY_RIGHT:
             phi += 0.04;
             break;
+        case GLUT_KEY_RIGHT:
+            phi -= 0.04;
+            break;
         case GLUT_KEY_DOWN:
-            theta -= 0.04;
+            theta -= 0.02;
             break;
         case GLUT_KEY_UP:
-            theta += 0.04;
-            break;
-        case GLUT_KEY_PAGE_DOWN:
-            distance += 0.04;
-            break;
-        case GLUT_KEY_PAGE_UP:
-            distance -= 0.04;
+            theta += 0.02;
             break;
         default:
             return;
     }
 
-    clamp(theta, -1, 1);
-    clamp(distance, 2, 10);
+    clamp(theta, -1.5f, 1.5f);
 
-    update_eye(phi, theta, distance);
+    update_eye();
 }
 
 void display() {
@@ -126,7 +152,8 @@ void init(int argc, char **argv) {
     viewPortSize_loc = glGetUniformLocation(program, "viewPortSize");
     timer_loc = glGetUniformLocation(program, "time");
     eye_loc = glGetUniformLocation(program, "eye");
-    update_eye(0, 1, 4);
+    eyeDir_loc = glGetUniformLocation(program, "eyeDir");
+    update_eye();
 }
 
 int main(int argc, char **argv) {
