@@ -1,6 +1,5 @@
 #version 130
 
-const int MAX_STEPS = 1000;
 const float EPS = 0.0001;
 const float NEAR = 0;
 const float FAR = 10000;
@@ -8,6 +7,7 @@ const float FAR = 10000;
 uniform float time;
 uniform vec3 eye;
 uniform vec3 eyeDir;
+uniform int maxSteps;
 
 in vec2 fragCoord;
 
@@ -60,7 +60,7 @@ float scene(vec3 p) {
 
 float getDist(vec3 eye, vec3 dir) {
     float depth = NEAR;
-    for (int i = 0; i < MAX_STEPS; ++i) {
+    for (int i = 0; i < maxSteps; ++i) {
         float dist = scene(eye + depth * dir);
         if (dist < EPS) {
             return depth;
