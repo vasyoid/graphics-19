@@ -19,6 +19,9 @@ float eye_y = 3;
 float eye_z = 4;
 int max_steps = 200;
 
+int time_shift = 0;
+int prev_time = -1;
+
 void draw_info();
 
 void update_eye() {
@@ -31,7 +34,9 @@ void update_max_steps() {
 }
 
 void idle() {
-    glUniform1f(timer_loc, glutGet(GLUT_ELAPSED_TIME) / 1000.0f);
+    if (prev_time < 0) {
+        glUniform1f(timer_loc, (glutGet(GLUT_ELAPSED_TIME) + time_shift) / 1000.0f);
+    }
 }
 
 void reshape(int width, int height) {
@@ -68,6 +73,14 @@ void mouse_press(int button, int state, int x, int y) {
 
 void key_press(unsigned char key, int x, int y) {
     switch (key) {
+        case 32:
+            if (prev_time < 0) {
+                prev_time = glutGet(GLUT_ELAPSED_TIME);
+            } else {
+                time_shift += prev_time - glutGet(GLUT_ELAPSED_TIME);
+                prev_time = -1;
+            }
+            break;
         case 27:
             exit(0);
         case 'A':
@@ -143,6 +156,7 @@ void draw_info() {
     std::string info[] = {
         "Max steps: " + std::to_string(max_steps),
         "Camera position: (" + std::to_string(eye_x) + ", " + std::to_string(eye_y) + ", " + std::to_string(eye_z) + ")",
+        "Pause animation: Space",
         "Change max steps: scroll up/down",
         "Move left/right: W A S D",
         "Move up/down: Q E",
