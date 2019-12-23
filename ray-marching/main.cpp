@@ -139,11 +139,9 @@ void special_key_press(int key, int x, int y) {
             break;
         case GLUT_KEY_PAGE_UP:
             max_reflect++;
-            update_max_reflect();
             break;
         case GLUT_KEY_PAGE_DOWN:
             max_reflect--;
-            update_max_reflect();
             break;
         default:
             return;
@@ -152,6 +150,7 @@ void special_key_press(int key, int x, int y) {
     clamp(theta, -1.5f, 1.5f);
     clamp(max_reflect, 0, 20);
 
+    update_max_reflect();
     update_eye();
 }
 
