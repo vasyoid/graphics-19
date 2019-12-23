@@ -158,10 +158,10 @@ void main() {
     vec3 side = cross(eyeDir, vec3(0, 1, 0));
     vec3 up = cross(side, eyeDir);
     vec3 ray = normalize(eyeDir + side * fragCoord.x + up * fragCoord.y);
-    MarchResult marchResult = getDist(eye, ray);
+    MarchResult marchResult = ray_marching(eye, ray);
 
     if (marchResult.dist < FAR) {
-        vec3 normal = getNormal(eye + ray * marchResult.dist);
+        vec3 normal = get_normal(eye + ray * marchResult.dist);
         float light = 0.3 + 0.4 * dot(normal, -eyeDir) + 0.3 * dot(normal, normalize(vec3(1, 1, 1)));
         gl_FragColor = vec4(marchResult.color * light, 1);
     } else {
