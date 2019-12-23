@@ -9,65 +9,135 @@
 GLint viewPortSize_loc;
 GLint timer_loc;
 GLint eye_loc;
+GLint eyeDir_loc;
+GLint maxSteps_loc;
 
-void update_eye(float phi, float theta, float distance) {
-    glUniform3f(eye_loc, std::sin(phi) * distance, std::sin(theta) * distance, std::cos(phi) * distance);
+float phi = 0.8f;
+float theta = -0.7f;
+float eye_x = 2;
+float eye_y = 3;
+float eye_z = 4;
+int max_steps = 200;
+
+int time_shift = 0;
+int prev_time = -1;
+
+void draw_info();
+
+void update_eye() {
+    glUniform3f(eyeDir_loc, -std::sin(phi) * std::cos(theta), std::sin(theta), -std::cos(phi) * std::cos(theta));
+    glUniform3f(eye_loc, eye_x, eye_y, eye_z);
+}
+
+void update_max_steps() {
+    glUniform1i(maxSteps_loc, max_steps);
 }
 
 void idle() {
-    glUniform1f(timer_loc, glutGet(GLUT_ELAPSED_TIME) / 1000.0f);
+    if (prev_time < 0) {
+        glUniform1f(timer_loc, (glutGet(GLUT_ELAPSED_TIME) + time_shift) / 1000.0f);
+    }
 }
 
 void reshape(int width, int height) {
     glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, width, height, 0);
+    glMatrixMode(GL_MODELVIEW);
     glUniform2f(viewPortSize_loc, width, height);
+}
+
+const int SCROLL_UP = 3;
+const int SCROLL_DOWN = 4;
+
+template<typename T>
+void clamp(T &x, T min_x, T max_x) {
+    x = std::max(min_x, std::min(x, max_x));
+}
+
+void mouse_press(int button, int state, int x, int y) {
+    switch (button) {
+        case SCROLL_UP:
+            max_steps += 1;
+            break;
+        case SCROLL_DOWN:
+            max_steps -= 1;
+            break;
+        default:
+            return;
+    }
+    clamp(max_steps, 1, 1000);
+    update_max_steps();
 }
 
 void key_press(unsigned char key, int x, int y) {
     switch (key) {
+        case 32:
+            if (prev_time < 0) {
+                prev_time = glutGet(GLUT_ELAPSED_TIME);
+            } else {
+                time_shift += prev_time - glutGet(GLUT_ELAPSED_TIME);
+                prev_time = -1;
+            }
+            break;
         case 27:
             exit(0);
+        case 'A':
+        case 'a':
+            eye_x -= 0.1 * std::cos(phi);
+            eye_z += 0.1 * std::sin(phi);
+            break;
+        case 'D':
+        case 'd':
+            eye_x += 0.1 * std::cos(phi);
+            eye_z -= 0.1 * std::sin(phi);
+            break;
+        case 'S':
+        case 's':
+            eye_x += 0.1 * std::sin(phi);
+            eye_z += 0.1 * std::cos(phi);
+            break;
+        case 'W':
+        case 'w':
+            eye_x -= 0.1 * std::sin(phi);
+            eye_z -= 0.1 * std::cos(phi);
+            break;
+        case 'Q':
+        case 'q':
+            eye_y += 0.1;
+            break;
+        case 'E':
+        case 'e':
+            eye_y -= 0.1;
+            break;
         default:
             return;
     }
-}
-
-void clamp(float &x, float min_x, float max_x) {
-    x = std::max(min_x, std::min(x, max_x));
+    update_eye();
 }
 
 void special_key_press(int key, int x, int y) {
-    static float distance = 4;
-    static float phi = 0;
-    static float theta = 1;
-
     switch (key) {
         case GLUT_KEY_LEFT:
-            phi -= 0.04;
-            break;
-        case GLUT_KEY_RIGHT:
             phi += 0.04;
             break;
+        case GLUT_KEY_RIGHT:
+            phi -= 0.04;
+            break;
         case GLUT_KEY_DOWN:
-            theta -= 0.04;
+            theta -= 0.02;
             break;
         case GLUT_KEY_UP:
-            theta += 0.04;
-            break;
-        case GLUT_KEY_PAGE_DOWN:
-            distance += 0.04;
-            break;
-        case GLUT_KEY_PAGE_UP:
-            distance -= 0.04;
+            theta += 0.02;
             break;
         default:
             return;
     }
 
-    clamp(theta, -1, 1);
-    clamp(distance, 2, 10);
+    clamp(theta, -1.5f, 1.5f);
 
-    update_eye(phi, theta, distance);
+    update_eye();
 }
 
 void display() {
@@ -77,8 +147,30 @@ void display() {
     glVertexPointer(2, GL_FLOAT, 0, vertices);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glDisableClientState(GL_VERTEX_ARRAY);
+    draw_info();
     glutSwapBuffers();
     glutPostRedisplay();
+}
+
+void draw_info() {
+    std::string info[] = {
+        "Max steps: " + std::to_string(max_steps),
+        "Camera position: (" + std::to_string(eye_x) + ", " + std::to_string(eye_y) + ", " + std::to_string(eye_z) + ")",
+        "Pause animation: Space",
+        "Change max steps: scroll up/down",
+        "Move left/right: W A S D",
+        "Move up/down: Q E",
+        "Rotate camera: arrow buttons"
+    };
+    int x = 30;
+    int y = 40;
+    for (const std::string &str : info) {
+        glRasterPos2f(x, y);
+        for (const char &c : str) {
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+        y += 25;
+    }
 }
 
 GLuint create_shader(GLenum shader_type, const char *filename) {
@@ -120,13 +212,17 @@ void init(int argc, char **argv) {
     glutCreateWindow("Ray marching");
 
     glClearColor(0, 0, 0, 1);
+    glColor3f(1, 0, 1);
     glewInit();
     GLuint program = create_program();
 
     viewPortSize_loc = glGetUniformLocation(program, "viewPortSize");
     timer_loc = glGetUniformLocation(program, "time");
     eye_loc = glGetUniformLocation(program, "eye");
-    update_eye(0, 1, 4);
+    eyeDir_loc = glGetUniformLocation(program, "eyeDir");
+    maxSteps_loc = glGetUniformLocation(program, "maxSteps");
+    update_eye();
+    update_max_steps();
 }
 
 int main(int argc, char **argv) {
@@ -136,5 +232,6 @@ int main(int argc, char **argv) {
     glutIdleFunc(idle);
     glutKeyboardFunc(key_press);
     glutSpecialFunc(special_key_press);
+    glutMouseFunc(mouse_press);
     glutMainLoop();
 }
