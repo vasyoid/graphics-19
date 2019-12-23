@@ -11,13 +11,15 @@ GLint timer_loc;
 GLint eye_loc;
 GLint eyeDir_loc;
 GLint maxSteps_loc;
+GLint maxReflect_loc;
 
-float phi = 0.8f;
-float theta = -0.7f;
-float eye_x = 2;
-float eye_y = 3;
-float eye_z = 4;
+float phi = 0;
+float theta = 0;
+float eye_x = 0;
+float eye_y = 0;
+float eye_z = 18;
 int max_steps = 200;
+int max_reflect = 1;
 
 int time_shift = 0;
 int prev_time = -1;
@@ -31,6 +33,10 @@ void update_eye() {
 
 void update_max_steps() {
     glUniform1i(maxSteps_loc, max_steps);
+}
+
+void update_max_reflect() {
+    glUniform1i(maxReflect_loc, max_reflect);
 }
 
 void idle() {
@@ -131,11 +137,20 @@ void special_key_press(int key, int x, int y) {
         case GLUT_KEY_UP:
             theta += 0.02;
             break;
+        case GLUT_KEY_PAGE_UP:
+            max_reflect++;
+            update_max_reflect();
+            break;
+        case GLUT_KEY_PAGE_DOWN:
+            max_reflect--;
+            update_max_reflect();
+            break;
         default:
             return;
     }
 
     clamp(theta, -1.5f, 1.5f);
+    clamp(max_reflect, 0, 20);
 
     update_eye();
 }
@@ -154,6 +169,7 @@ void display() {
 
 void draw_info() {
     std::string info[] = {
+        "Max reflect: " + std::to_string(max_reflect),
         "Max steps: " + std::to_string(max_steps),
         "Camera position: (" + std::to_string(eye_x) + ", " + std::to_string(eye_y) + ", " + std::to_string(eye_z) + ")",
         "Pause animation: Space",
@@ -221,8 +237,10 @@ void init(int argc, char **argv) {
     eye_loc = glGetUniformLocation(program, "eye");
     eyeDir_loc = glGetUniformLocation(program, "eyeDir");
     maxSteps_loc = glGetUniformLocation(program, "maxSteps");
+    maxReflect_loc = glGetUniformLocation(program, "maxReflect");
     update_eye();
     update_max_steps();
+    update_max_reflect();
 }
 
 int main(int argc, char **argv) {
