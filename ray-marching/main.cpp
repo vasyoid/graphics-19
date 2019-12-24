@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include "readpng.h"
 
 GLint viewPortSize_loc;
 GLint timer_loc;
@@ -170,7 +171,8 @@ void draw_info() {
     std::string info[] = {
         "Max reflect: " + std::to_string(max_reflect),
         "Max steps: " + std::to_string(max_steps),
-        "Camera position: (" + std::to_string(eye_x) + ", " + std::to_string(eye_y) + ", " + std::to_string(eye_z) + ")",
+        "Camera position: (" + std::to_string(eye_x) + ", " + std::to_string(eye_y) + ", " + std::to_string(eye_z) +
+        ")",
         "Pause animation: Space",
         "Change max steps: scroll up/down",
         "Move left/right: W A S D",
@@ -220,6 +222,57 @@ GLuint create_program() {
     return program;
 }
 
+void load_texture(GLuint program) {
+
+
+    GLenum textures[] = {
+        GL_TEXTURE0,
+        GL_TEXTURE1,
+        GL_TEXTURE2,
+        GL_TEXTURE3,
+        GL_TEXTURE4,
+        GL_TEXTURE5
+    };
+
+    for (int i = 0; i < 6; ++i) {
+        glActiveTexture(textures[i]);
+        GLuint tex;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        PngImage image = read_png_file(std::to_string(i) + ".png");
+
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGB,
+            static_cast<GLsizei>(image.width),
+            static_cast<GLsizei>(image.height),
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            image.data
+        );
+
+        delete[] image.data;
+
+        GLenum err;
+
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            fprintf(stderr, "OpenGL Error : %i , %s\n", err, gluErrorString(err));
+        }
+    }
+
+    GLint sampler_loc = glGetUniformLocation(program, "sampler");
+    int samplers[] = {0, 1, 2, 3, 4, 5};
+    glUniform1iv(sampler_loc, 6, samplers);
+}
+
 void init(int argc, char **argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
@@ -230,6 +283,8 @@ void init(int argc, char **argv) {
     glColor3f(1, 0, 1);
     glewInit();
     GLuint program = create_program();
+
+    load_texture(program);
 
     viewPortSize_loc = glGetUniformLocation(program, "viewPortSize");
     timer_loc = glGetUniformLocation(program, "time");
