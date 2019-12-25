@@ -63,6 +63,8 @@ PngImage read_png_file(const std::string &filename) {
 
     png_read_image(png, row_pointers);
 
+    delete[] row_pointers;
+
     fclose(fp);
 
     png_destroy_read_struct(&png, &info, nullptr);
